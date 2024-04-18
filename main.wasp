@@ -1,0 +1,176 @@
+app InnovateHUBPay {
+  wasp: {
+    version: "^0.13.0"
+  },
+  title: "InnovateHUBPay",
+  client: {
+    rootComponent: import { Layout } from "@src/Layout.jsx",
+  },
+  db: {
+    prisma: {
+      clientPreviewFeatures: ["extendedWhereUnique"]
+    }
+  },
+  auth: {
+    userEntity: User,
+    methods: {
+      usernameAndPassword: {}
+    },
+    onAuthFailedRedirectTo: "/login",
+    onAuthSucceededRedirectTo: "/"
+  },
+}
+
+route LoginRoute { path: "/login", to: LoginPage }
+page LoginPage {
+  component: import Login from "@src/pages/auth/Login.jsx"
+}
+route SignupRoute { path: "/signup", to: SignupPage }
+page SignupPage {
+  component: import Signup from "@src/pages/auth/Signup.jsx"
+}
+
+entity User {=psl
+    id            Int            @id @default(autoincrement())
+    username      String         @unique
+    email         String         @unique
+    password      String
+    role          String
+    status        String
+    profile       Profile        @relation(fields: [profileId], references: [id])
+    wallet        Wallet         @relation(fields: [walletId], references: [id])
+    notifications Notification[]
+    profileId     Int
+    walletId      Int
+psl=}
+
+entity Profile {=psl
+    id   Int    @id @default(autoincrement())
+    info String
+    User User[]
+psl=}
+
+entity Partner {=psl
+    id                      Int      @id @default(autoincrement())
+    companyName             String
+    branches                Branch[]
+    contactDetails          String
+    registrationInformation String
+psl=}
+
+entity Branch {=psl
+    id        Int     @id @default(autoincrement())
+    partnerId Int
+    Partner   Partner @relation(fields: [partnerId], references: [id])
+psl=}
+
+entity Transaction {=psl
+    id        Int      @id @default(autoincrement())
+    userId    Int
+    type      String
+    amount    Float
+    status    String
+    timestamp DateTime @default(now())
+    Report    Report[]
+psl=}
+
+entity Wallet {=psl
+    id          Int      @id @default(autoincrement())
+    userId      Int
+    balance     Float
+    lastUpdated DateTime @default(now())
+    User        User[]
+psl=}
+
+entity Report {=psl
+    id              Int         @id @default(autoincrement())
+    userId          Int
+    transactionData Transaction @relation(fields: [transactionId], references: [id])
+    dateRange       String
+    transactionId   Int
+psl=}
+
+entity Configuration {=psl
+    id          Int      @id @default(autoincrement())
+    settingType String
+    details     String
+    lastUpdated DateTime @default(now())
+psl=}
+
+entity Notification {=psl
+    id      Int    @id @default(autoincrement())
+    userId  Int
+    type    String
+    content String
+    status  String
+    User    User   @relation(fields: [userId], references: [id])
+psl=}
+
+action registerUser {
+  fn: import { registerUser } from "@src/actions.js",
+  entities: [User]
+}
+
+action updateUser {
+  fn: import { updateUser } from "@src/actions.js",
+  entities: [User]
+}
+
+action createTransaction {
+  fn: import { createTransaction } from "@src/actions.js",
+  entities: [Transaction]
+}
+
+action updateWallet {
+  fn: import { updateWallet } from "@src/actions.js",
+  entities: [Wallet]
+}
+
+action generateReport {
+  fn: import { generateReport } from "@src/actions.js",
+  entities: [Report]
+}
+
+query getUser {
+  fn: import { getUser } from "@src/queries.js",
+  entities: [User]
+}
+
+query getTransactions {
+  fn: import { getTransactions } from "@src/queries.js",
+  entities: [Transaction]
+}
+
+query getWallet {
+  fn: import { getWallet } from "@src/queries.js",
+  entities: [Wallet]
+}
+
+query getReport {
+  fn: import { getReport } from "@src/queries.js",
+  entities: [Report]
+}
+
+route DashboardRoute { path: "/", to: DashboardPage }
+page DashboardPage {
+  component: import DashboardPage from "@src/pages/Dashboard.jsx",
+  authRequired: true
+}
+
+route TransactionRoute { path: "/transaction", to: TransactionPage }
+page TransactionPage {
+  component: import TransactionPage from "@src/pages/Transaction.jsx",
+  authRequired: true
+}
+
+route ReportRoute { path: "/report", to: ReportPage }
+page ReportPage {
+  component: import ReportPage from "@src/pages/Report.jsx",
+  authRequired: true
+}
+
+route ProfileRoute { path: "/profile", to: ProfilePage }
+page ProfilePage {
+  component: import ProfilePage from "@src/pages/Profile.jsx",
+  authRequired: true
+}
